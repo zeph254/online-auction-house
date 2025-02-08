@@ -40,8 +40,9 @@ def register():
 @user_bp.route('/promote/<int:user_id>', methods=['POST'])
 @jwt_required()  # Ensure only logged-in users can do this
 def promote_to_admin(user_id):
-    current_user_email = get_jwt_identity()
-    current_user = User.query.filter_by(email=current_user_email).first()
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
 
     # Only admins can promote users
     if not current_user or current_user.role != "admin":
@@ -54,7 +55,65 @@ def promote_to_admin(user_id):
     if user.role == "admin":
         return jsonify({"message": "User is already an admin"}), 400
 
+    # Prevent the last admin from demoting themselves
+    total_admins = User.query.filter_by(role="admin").count()
+    if total_admins == 1 and user.user_id == current_user.user_id:
+        return jsonify({"error": "Cannot demote the last admin"}), 403
+
     user.role = "admin"
     db.session.commit()
 
     return jsonify({"message": f"{user.name} has been promoted to admin!"}), 200
+
+
+@user_bp.route('/update/<int:user_id>', methods=['PATCH'])
+@jwt_required()
+def update_user(user_id):
+    current_user_id = get_jwt_identity()
+
+    user = User.query.get(current_user_id)
+
+    if user:    
+        data = request.get_json()
+
+        # Use .get() method correctly
+        name = data.get('name', user.name)
+        email = data.get('email', user.email)
+        password = data.get('password', user.password)
+
+        # Hash the password only if a new password is provided
+        if password != user.password:
+            password = generate_password_hash(password)
+
+        # Check if the new name or email already exists (excluding the current user)
+        check_name = User.query.filter(User.name == name, User.user_id != user_id).first()
+        check_email = User.query.filter(User.email == email, User.user_id != user_id).first()
+
+        if check_name or check_email:
+            return jsonify({"error": "Username or email already exists"}), 400
+        
+        else:
+            user.name = name
+            user.email = email
+            user.password = password
+
+            db.session.commit()
+            return jsonify({"message": f"User has been updated"}), 200
+
+    else:
+        return jsonify({"message": "User doesn't exist"}), 404
+
+@user_bp.route('/delete/<int:user_id>', methods=['DELETE'])
+@jwt_required()
+def delete_user(user_id):
+    current_user_id = get_jwt_identity()
+
+    user = User.query.get(current_user_id)
+
+    if user:    
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({"message": f"User has been deleted"}), 200
+    
+    else:
+        return jsonify({"message": "User doesn't exist"}), 404
