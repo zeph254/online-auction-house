@@ -1,14 +1,18 @@
-from flask import Blueprint,jsonify,request
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash
 from models import User, db
+from flask_cors import cross_origin  # ✅ Import this
 
+user_bp = Blueprint('user_bp', __name__)
 
-user_bp = Blueprint('user_bp', __name__,)
-
-
-@user_bp.route('/register', methods=['POST'])
+# ✅ Handle preflight OPTIONS request properly
+@user_bp.route('/register', methods=['POST', 'OPTIONS'])
+@cross_origin(origin='http://localhost:5173', supports_credentials=True)
 def register():
+    if request.method == 'OPTIONS':  # ✅ Handle preflight request
+        return jsonify({"message": "Preflight request successful"}), 200
+
     data = request.get_json()
 
     # Check if user already exists
@@ -16,24 +20,15 @@ def register():
         return jsonify({"error": "User already exists"}), 400
 
     hashed_password = generate_password_hash(data["password"])
-
-    # Check if there are any admins in the system
     existing_admin = User.query.filter_by(role="admin").first()
-    
-    # First user becomes admin, others become bidders
     role = "admin" if existing_admin is None else "bidder"
 
-    new_user = User(
-        name=data["name"],
-        email=data["email"],
-        password=hashed_password,
-        role=role
-    )
-
+    new_user = User(name=data["name"], email=data["email"], password=hashed_password, role=role)
     db.session.add(new_user)
     db.session.commit()
 
     return jsonify({"message": f"User registered successfully as {role}!"}), 201
+
 
 
 

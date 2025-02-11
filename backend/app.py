@@ -1,33 +1,37 @@
 from flask import Flask
-from models import TokenBlocklist, db
-from flask_migrate import Migrate
+from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate
+from models import db, TokenBlocklist
 from datetime import timedelta
 
 app = Flask(__name__)
 
+# ✅ Allow CORS for frontend requests
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
+
+# ✅ Database & JWT setup
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///auction.db'
-migrate = Migrate(app, db)
+app.config['JWT_SECRET_KEY'] = 'your_secret_key'
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 
 db.init_app(app)
-
-
 jwt = JWTManager(app)
-jwt.init_app(app)
+migrate = Migrate(app, db)
 
-app.config['JWT_SECRET_KEY'] = 'https6789069954321t2wndpd'
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours = 24)
+# ✅ Import & Register Blueprints
+from views import auth_bp, user_bp, item_bp, bid_bp
+app.register_blueprint(auth_bp, url_prefix='/api/auth')
+app.register_blueprint(user_bp, url_prefix='/api/user')
+app.register_blueprint(item_bp, url_prefix='/api/item')
+app.register_blueprint(bid_bp, url_prefix='/api/bid')
 
-
-from views import *
-app.register_blueprint(auth_bp)
-app.register_blueprint(user_bp)
-app.register_blueprint(item_bp)
-app.register_blueprint(bid_bp)
-
-
+# ✅ Handle blocked JWTs (logout)
 @jwt.token_in_blocklist_loader
-def check_if_token_in_blocklist(jwt_header, jwt_payload)->bool:
+def check_if_token_in_blocklist(jwt_header, jwt_payload) -> bool:
     jti = jwt_payload["jti"]
     token = db.session.query(TokenBlocklist).filter_by(jti=jti).scalar()
     return token is not None
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)

@@ -9,8 +9,8 @@ flask-migrate = "*"
 flask = "*"
 flask-jwt-extended = "*"
 werkzeug = "*"
-flask-cors = "*"
 apscheduler = "*"
+flask-cors = "*"
 
 [dev-packages]
 

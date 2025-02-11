@@ -23,6 +23,10 @@ export default function Navbar() {
               <li className="nav-item">
               <Link to={"/register"} className="nav-link" href="#">Register</Link>
               </li>
+              <li className="nav-item">
+              <Link to={"/Profile"} className="nav-link" href="#">Profile</Link>
+              </li>
+              
             </ul>
             
           </div>

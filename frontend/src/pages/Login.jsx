@@ -1,26 +1,44 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useUser } from '../context/UserContext';
 
 export default function Login() {
-    const navigate = useNavigate();
+    const { login } = useUser();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        login(email, password);
+    };
 
     return (
         <div className="card">
             <div className="card-info">
-                <form>
+                <form onSubmit={handleSubmit}>
                     <h2 className="title">Login</h2>
                     <div className="mb-3">
                         <label htmlFor="email" className="form-label">Email Address</label>
-                        <input type="email" className="form-control" id="email" required />
+                        <input
+                            type="email"
+                            className="form-control"
+                            id="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
                     </div>
                     <div className="mb-3">
                         <label htmlFor="password" className="form-label">Password</label>
-                        <input type="password" className="form-control" id="password" required />
+                        <input
+                            type="password"
+                            className="form-control"
+                            id="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
                     </div>
                     <button type="submit" className="btn btn-primary">Login</button>
-                    <p className="toggle-text" onClick={() => navigate('/register')}>
-                        Don't have an account? Sign Up
-                    </p>
                 </form>
             </div>
         </div>
