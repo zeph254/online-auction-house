@@ -14,26 +14,34 @@ import AdminDashboard from './pages/AdminDashboard';
 import AuctionListing from './pages/AuctionListing';
 import AuctionDetails from './pages/AuctionDetails';
 import AuctionResults from './pages/AuctionResults';
+import { UserProvider } from "./context/UserContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
   return (
-    <Routes> {/* ✅ No extra <BrowserRouter> */}
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Home />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="contact" element={<Contact />} />
-        <Route path="register" element={<Register />} />
-        <Route path="*" element={<NoPage />} />
-        <Route path="login" element={<Login />} />
-        <Route path="aboutus" element={<AboutUs />} />
-        <Route path="addauctionitem" element={<AddAuctionItem />} />
-        <Route path="auctionlisting/:id" element={<AuctionListing />} />
-        <Route path="admindashboard" element={<AdminDashboard />} />
-        <Route path="auctiondetails/:id" element={<AuctionDetails />} />
-        <Route path="auctionresults" element={<AuctionResults />} />
-        <Route path="placebid/:id" element={<PlaceBid />} />
-        <Route path="profile" element={<Profile />} />
-      </Route>
-    </Routes>
+    <UserProvider>
+      <Routes> {/* ✅ No extra <BrowserRouter> */}
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="contact" element={<Contact />} />
+          <Route path="aboutus" element={<AboutUs />} />
+          <Route path="register" element={<Register />} />
+          <Route path="login" element={<Login />} />
+          <Route path="*" element={<NoPage />} />
+
+          {/* ✅ Protected Routes: Only accessible if logged in */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="addauctionitem" element={<AddAuctionItem />} />
+            <Route path="auctionlisting/:id" element={<AuctionListing />} />
+            <Route path="admindashboard" element={<AdminDashboard />} />
+            <Route path="auctiondetails/:id" element={<AuctionDetails />} />
+            <Route path="auctionresults" element={<AuctionResults />} />
+            <Route path="placebid/:id" element={<PlaceBid />} />
+          </Route>
+        </Route>
+      </Routes>
+    </UserProvider>
   );
 }

@@ -9,24 +9,26 @@ export default function Register() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(null); // ✅ New success message state
+    const [success, setSuccess] = useState(null);
+    const [loading, setLoading] = useState(false); // Loading state
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
-        setSuccess(null); // ✅ Clear messages on submit
+        setSuccess(null);
+        setLoading(true); // Start loading
 
         if (password !== confirmPassword) {
             setError('Passwords do not match');
+            setLoading(false); // Stop loading
             return;
         }
 
         const success = await register(name, email, password);
+        setLoading(false); // Stop loading
         if (success) {
             setSuccess('Registration successful! Redirecting to login...');
-
-            // ✅ Delay redirection for a better UX
             setTimeout(() => {
                 navigate('/login');
             }, 2000);
@@ -40,10 +42,8 @@ export default function Register() {
             <div className="card-info">
                 <form onSubmit={handleSubmit}>
                     <h2 className="title">Sign Up</h2>
-                    
                     {error && <div className="alert alert-danger">{error}</div>}
                     {success && <div className="alert alert-success">{success}</div>}
-
                     <div className="mb-3">
                         <label htmlFor="name" className="form-label">Name</label>
                         <input
@@ -88,7 +88,9 @@ export default function Register() {
                             required
                         />
                     </div>
-                    <button type="submit" className="btn btn-primary">Sign Up</button>
+                    <button type="submit" className="btn btn-primary" disabled={loading}>
+                        {loading ? 'Registering...' : 'Sign Up'}
+                    </button>
                 </form>
             </div>
         </div>

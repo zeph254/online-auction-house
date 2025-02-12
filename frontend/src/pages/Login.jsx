@@ -6,13 +6,15 @@ export default function Login() {
     const { login } = useUser();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const navigate = useNavigate(); // ✅ Use inside component
+    const [loading, setLoading] = useState(false); // Loading state
+    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+        setLoading(true); // Start loading
         const success = await login(email, password);
-        if (success) navigate('/'); // ✅ Redirect after successful login
+        setLoading(false); // Stop loading
+        if (success) navigate('/');
     };
 
     return (
@@ -42,7 +44,9 @@ export default function Login() {
                             required
                         />
                     </div>
-                    <button type="submit" className="btn btn-primary">Login</button>
+                    <button type="submit" className="btn btn-primary" disabled={loading}>
+                        {loading ? 'Logging in...' : 'Login'}
+                    </button>
                 </form>
             </div>
         </div>
