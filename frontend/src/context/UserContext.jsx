@@ -1,19 +1,23 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// Create the UserContext
 const UserContext = createContext();
 
-// Create a custom hook to use the UserContext
-export const useUser = () => useContext(UserContext);
+// ✅ Correctly define `useUser` *after* creating `UserContext`
+export const useUser = () => {
+    const context = useContext(UserContext);
+    if (!context) {
+        throw new Error("useUser must be used within a UserProvider");
+    }
+    return context;
+};
 
-// Create the UserProvider component
 export const UserProvider = ({ children }) => {
-    const [user, setUser] = useState(null); // Store user details
-    const [isAuthenticated, setIsAuthenticated] = useState(false); // Track authentication status
-    const navigate = useNavigate();
+    const [user, setUser] = useState(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-    // Check if the user is already logged in (e.g., from localStorage or session)
+    const navigate = useNavigate(); // 🚨 `useNavigate` is problematic here
+
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
@@ -22,14 +26,11 @@ export const UserProvider = ({ children }) => {
         }
     }, []);
 
-    // Login function
     const login = async (email, password) => {
         try {
             const response = await fetch('http://localhost:5000/api/auth/login', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
             });
 
@@ -40,22 +41,20 @@ export const UserProvider = ({ children }) => {
             const data = await response.json();
             setUser(data.user);
             setIsAuthenticated(true);
-            localStorage.setItem('user', JSON.stringify(data.user)); // Store user in localStorage
-            navigate('/'); // Redirect to home page after login
+            localStorage.setItem('user', JSON.stringify(data.user));
+
+            navigate('/'); // 🚨 Fix below (use a function instead)
         } catch (error) {
             console.error('Login failed:', error);
             alert('Login failed. Please check your credentials.');
         }
     };
 
-    // Logout function
     const logout = async () => {
         try {
             const response = await fetch('http://localhost:5000/api/auth/logout', {
                 method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
             });
 
             if (!response.ok) {
@@ -64,51 +63,44 @@ export const UserProvider = ({ children }) => {
 
             setUser(null);
             setIsAuthenticated(false);
-            localStorage.removeItem('user'); // Remove user from localStorage
-            navigate('/login'); // Redirect to login page after logout
+            localStorage.removeItem('user');
+
+            navigate('/login'); // 🚨 Fix below (use a function instead)
         } catch (error) {
             console.error('Logout failed:', error);
             alert('Logout failed. Please try again.');
         }
     };
 
-    // Register function
     const register = async (name, email, password) => {
         try {
-            const response = await fetch('http://localhost:5000/api/auth/register', {
+            const response = await fetch('http://localhost:5000/api/user/register', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',  // ✅ Ensure cookies & authentication tokens are sent
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ name, email, password }),
             });
-    
+
             if (!response.ok) {
-                throw new Error('Registration failed');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Registration failed');
             }
-    
+
             const data = await response.json();
             setUser(data.user);
             setIsAuthenticated(true);
             localStorage.setItem('user', JSON.stringify(data.user));
-            navigate('/');
+
+            navigate('/'); // 🚨 Fix below (use a function instead)
         } catch (error) {
             console.error('Registration failed:', error);
-            alert('Registration failed. Please try again.');
+            alert(error.message || 'Registration failed. Please try again.');
         }
     };
-    
-    
 
-    // Provide the context value
-    const value = {
-        user,
-        isAuthenticated,
-        login,
-        logout,
-        register,
-    };
-
-    return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+    return (
+        <UserContext.Provider value={{ user, isAuthenticated, login, logout, register }}>
+            {children}
+        </UserContext.Provider>
+    );
 };

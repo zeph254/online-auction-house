@@ -4,18 +4,18 @@ from werkzeug.security import generate_password_hash
 from models import User, db
 from flask_cors import cross_origin  # ✅ Import this
 
+
 user_bp = Blueprint('user_bp', __name__)
 
 # ✅ Handle preflight OPTIONS request properly
 @user_bp.route('/register', methods=['POST', 'OPTIONS'])
 @cross_origin(origin='http://localhost:5173', supports_credentials=True)
 def register():
-    if request.method == 'OPTIONS':  # ✅ Handle preflight request
+    if request.method == 'OPTIONS':  # ✅ Handle preflight requests
         return jsonify({"message": "Preflight request successful"}), 200
 
     data = request.get_json()
 
-    # Check if user already exists
     if User.query.filter_by(email=data["email"]).first():
         return jsonify({"error": "User already exists"}), 400
 
@@ -28,6 +28,7 @@ def register():
     db.session.commit()
 
     return jsonify({"message": f"User registered successfully as {role}!"}), 201
+
 
 
 

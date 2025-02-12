@@ -4,15 +4,16 @@ from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from models import db, TokenBlocklist
 from datetime import timedelta
+import os
 
 app = Flask(__name__)
 
 # ✅ Allow CORS for frontend requests
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
+CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
 
 # ✅ Database & JWT setup
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///auction.db'
-app.config['JWT_SECRET_KEY'] = 'your_secret_key'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///auction.db')
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'your_secret_key')  # Use environment variable
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 
 db.init_app(app)

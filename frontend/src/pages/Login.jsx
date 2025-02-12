@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { useUser } from '../context/UserContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
     const { login } = useUser();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const navigate = useNavigate(); // ✅ Use inside component
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        login(email, password);
+        
+        const success = await login(email, password);
+        if (success) navigate('/'); // ✅ Redirect after successful login
     };
 
     return (
