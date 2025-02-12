@@ -24,12 +24,18 @@ def login():
 
     if user and check_password_hash(user.password, password):
         access_token = create_access_token(identity=user.user_id)
+        user_data = {
+            "user_id": user.user_id,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role,
+            "is_verified": user.is_verified
+        }
         logger.info(f"User {user.email} logged in successfully")
-        return jsonify({"access_token": access_token}), 200
+        return jsonify({"access_token": access_token, "user": user_data}), 200
 
     logger.warning(f"Failed login attempt for email: {email}")
     return jsonify({"error": "Invalid email or password"}), 401
-
 @auth_bp.route("/current_user")
 @jwt_required()
 def current_user():

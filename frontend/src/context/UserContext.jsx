@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+// Create UserContext
 export const UserContext = createContext();
 
+// Custom hook to use UserContext
 export const useUser = () => {
     const context = useContext(UserContext);
     if (!context) {
@@ -11,19 +13,34 @@ export const useUser = () => {
     return context;
 };
 
+// Detect if localStorage is allowed
+const isStorageAvailable = (() => {
+    try {
+        localStorage.setItem('__test__', 'test');
+        localStorage.removeItem('__test__');
+        return true;
+    } catch (e) {
+        return false;
+    }
+})();
+
+const storage = isStorageAvailable ? localStorage : sessionStorage; // Use sessionStorage as a fallback
+
+// UserProvider component
 export const UserProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const navigate = useNavigate();
 
+    // Check storage for user data on component mount
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        const token = localStorage.getItem('token');
+        const storedUser = storage.getItem('user');
+        const token = storage.getItem('token');
 
         if (storedUser && token) {
             try {
                 const parsedUser = JSON.parse(storedUser);
-                if (parsedUser && parsedUser.user_id) {
+                if (parsedUser?.user_id) {
                     setUser(parsedUser);
                     setIsAuthenticated(true);
                 } else {
@@ -31,19 +48,21 @@ export const UserProvider = ({ children }) => {
                 }
             } catch (error) {
                 console.error("Error parsing user data:", error);
-                localStorage.removeItem('user');
-                localStorage.removeItem('token');
+                storage.removeItem('user');
+                storage.removeItem('token');
             }
         }
     }, []);
 
+    // Clear user data from state and storage
     const clearUserData = () => {
         setUser(null);
         setIsAuthenticated(false);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
+        storage.removeItem('user');
+        storage.removeItem('token');
     };
 
+    // Login function
     const login = async (email, password) => {
         try {
             const response = await fetch('http://localhost:5000/api/auth/login', {
@@ -51,17 +70,36 @@ export const UserProvider = ({ children }) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
             });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Login failed');
+    
+            const textResponse = await response.text(); // Read raw response
+            console.log("Raw Server Response:", textResponse);
+    
+            const data = JSON.parse(textResponse); // Try parsing JSON
+    
+            if (!data.access_token) {
+                throw new Error('Invalid response from server');
             }
-
-            const data = await response.json();
-            setUser(data.user);
+    
+            // Fetch user data using the access token
+            const userResponse = await fetch('http://localhost:5000/api/auth/current_user', {
+                method: 'GET',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${data.access_token}`
+                }
+            });
+    
+            const userData = await userResponse.json();
+    
+            if (!userData.user_id) {
+                throw new Error('Invalid user data');
+            }
+    
+            storage.setItem('user', JSON.stringify(userData));
+            storage.setItem('token', data.access_token);
+    
+            setUser(userData);
             setIsAuthenticated(true);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            localStorage.setItem('token', data.access_token);
             return true;
         } catch (error) {
             console.error('Login failed:', error);
@@ -70,9 +108,10 @@ export const UserProvider = ({ children }) => {
         }
     };
 
+    // Logout function
     const logout = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = storage.getItem('token');
             if (!token) {
                 clearUserData();
                 navigate('/login');
