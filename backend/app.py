@@ -7,13 +7,18 @@ from datetime import timedelta
 import os
 
 app = Flask(__name__)
+CORS(
+    app,
+    origins="http://localhost:5173",  # Allow requests from this origin
+    supports_credentials=True,         # Allow credentials (cookies, tokens)
+    methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"],  # Allow these methods
+    allow_headers=["Content-Type", "Authorization"]       # Allow these headers
+)
 
-# ✅ Allow CORS for frontend requests
-CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
 
 # ✅ Database & JWT setup
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///auction.db')
-app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'your_secret_key')  # Use environment variable
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'ytthghgvasthrdfdvdfjnsfffyjtf')  # Use environment variable
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 
 db.init_app(app)

@@ -9,7 +9,7 @@ import Register from "./pages/Register";
 import AboutUs from './pages/AboutUs';
 import PlaceBid from './pages/PlaceBid';
 import Profile from './pages/Profile';
-import AddAuctionItem from './pages/AddAuctionItem';
+import AddAuction from './pages/AddAuction';
 import AdminDashboard from './pages/AdminDashboard';
 import AuctionListing from './pages/AuctionListing';
 import AuctionDetails from './pages/AuctionDetails';
@@ -33,7 +33,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="profile" element={<Profile />} />
-            <Route path="addauctionitem" element={<AddAuctionItem />} />
+            <Route path="addauction" element={<AddAuction />} />
             <Route path="auctionlisting/:id" element={<AuctionListing />} />
             <Route path="admindashboard" element={<AdminDashboard />} />
             <Route path="auctiondetails/:id" element={<AuctionDetails />} />
