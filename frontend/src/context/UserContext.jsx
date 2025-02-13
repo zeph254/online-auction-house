@@ -16,12 +16,15 @@ export const useUser = () => {
 // Detect if localStorage is allowed
 const isStorageAvailable = (() => {
     try {
-        localStorage.setItem('__test__', 'test');
-        localStorage.removeItem('__test__');
-        return true;
+        if (typeof window !== 'undefined' && window.localStorage) {
+            localStorage.setItem('__test__', 'test');
+            localStorage.removeItem('__test__');
+            return true;
+        }
     } catch (e) {
         return false;
     }
+    return false;
 })();
 
 const storage = isStorageAvailable ? localStorage : sessionStorage; // Use sessionStorage as a fallback
@@ -32,7 +35,7 @@ export const UserProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const navigate = useNavigate();
 
-    // Check storage for user data on component mount
+    // Check storage for user data on mount
     useEffect(() => {
         const storedUser = storage.getItem('user');
         const token = storage.getItem('token');
@@ -54,7 +57,7 @@ export const UserProvider = ({ children }) => {
         }
     }, []);
 
-    // Clear user data from state and storage
+    // Clear user data
     const clearUserData = () => {
         setUser(null);
         setIsAuthenticated(false);
@@ -70,17 +73,13 @@ export const UserProvider = ({ children }) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
             });
-    
-            const textResponse = await response.text(); // Read raw response
+
+            const textResponse = await response.text();
             console.log("Raw Server Response:", textResponse);
-    
-            const data = JSON.parse(textResponse); // Try parsing JSON
-    
-            if (!data.access_token) {
-                throw new Error('Invalid response from server');
-            }
-    
-            // Fetch user data using the access token
+
+            const data = JSON.parse(textResponse);
+            if (!data.access_token) throw new Error('Invalid response from server');
+
             const userResponse = await fetch('http://localhost:5000/api/auth/current_user', {
                 method: 'GET',
                 headers: { 
@@ -88,16 +87,13 @@ export const UserProvider = ({ children }) => {
                     'Authorization': `Bearer ${data.access_token}`
                 }
             });
-    
+
             const userData = await userResponse.json();
-    
-            if (!userData.user_id) {
-                throw new Error('Invalid user data');
-            }
-    
+            if (!userData.user_id) throw new Error('Invalid user data');
+
             storage.setItem('user', JSON.stringify(userData));
             storage.setItem('token', data.access_token);
-    
+
             setUser(userData);
             setIsAuthenticated(true);
             return true;
@@ -126,9 +122,7 @@ export const UserProvider = ({ children }) => {
                 }
             });
 
-            if (!response.ok) {
-                throw new Error('Logout failed');
-            }
+            if (!response.ok) throw new Error('Logout failed');
 
             clearUserData();
             navigate('/login');
